@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LikeaDream 分批寄送資料建立</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+      :root { --primary: #d4a373; --text: #4a4a4a; --danger: #d63031; --success: #52b788; --line-green: #06c755; }
+      body {
+        font-family: 'Noto Sans TC', sans-serif;
+        margin: 0; padding: 20px; color: var(--text);
+        background: #fdf5e6;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 600px; margin: 0 auto;
+        background: rgba(255, 255, 255, 0.98);
+        padding: 25px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        padding-bottom: 80px;
+      }
+      h2 { text-align: center; color: #6b4f4f; margin-bottom: 5px; }
+      .subtitle { text-align: center; color: #888; font-size: 0.9rem; margin-bottom: 20px; }
+
+      label { display: block; margin-top: 10px; margin-bottom: 4px; font-weight: bold; color: #6b4f4f; font-size: 0.95rem; }
+
+      input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #fff; transition: 0.3s; }
+      input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.2); }
+
+      #hostInput { background-color: #fff8ee; border: 2px solid #e4dccb; color: #8c6b2d; font-weight: bold; }
+
+      .card {
+        background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; margin-bottom: 20px;
+        position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--primary);
+      }
+      .card-title { font-weight: bold; color: #aaa; font-size: 0.9rem; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+
+      .btn-remove {
+        position: absolute; top: 10px; right: 10px;
+        background: #ffe5e5; color: #d63031; border: none;
+        width: 30px; height: 30px; border-radius: 50%;
+        font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      }
+      .btn-remove:hover { background: #ffcccc; }
+
+      .notice-box {
+        display: none;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #fff0f0;
+        border-left: 4px solid #d63031;
+        border-radius: 4px;
+        color: #d63031;
+        font-size: 13px;
+        line-height: 1.5;
+        font-weight: bold;
+      }
+
+      .product-row {
+        background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 8px; position: relative;
+      }
+      .btn-del-prod {
+        position: absolute; right: -8px; top: -8px;
+        background: #eee; color: #888; border: 1px solid #ddd; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; line-height: 1;
+      }
+      .btn-del-prod:hover { background: #d63031; color: #fff; border-color: #d63031; }
+
+      .btn-sm {
+        padding: 8px 15px; font-size: 14px; background: #fff; border: 1px dashed #d4a373; color: #d4a373; border-radius: 20px; cursor: pointer; width: auto; display: inline-block;
+      }
+      .btn-sm:hover { background: #fff8ee; }
+
+      .row { display: flex; gap: 10px; }
+      .col-6 { flex: 1; } .col-8 { flex: 2; } .col-4 { flex: 1; }
+      @media (max-width: 480px) {
+        .row { flex-direction: column; }
+        .col-6, .col-8, .col-4 { width: 100%; }
+      }
+
+      .spec-row { display: flex; gap: 5px; margin-top: 5px; display: none; }
+      .spec-row select { font-size: 14px; padding: 8px; background: #f9f9f9; }
+
+      .action-area { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
+      .btn { width: 100%; padding: 15px; border: none; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+      .btn-add { background: #fff; border: 2px dashed #ccc; color: #888; }
+      .btn-submit { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(212, 163, 115, 0.4); font-size: 18px; }
+      .btn-outline { background: transparent; border: 1px solid #666; color: #666; margin-top: 10px; }
+
+      .success-card { text-align: center; padding: 10px 0; }
+      .success-icon { font-size: 4rem; color: var(--success); margin-bottom: 15px; }
+      .success-title { font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 10px; }
+      .success-desc { color: #888; font-size: 14px; margin-bottom: 20px; }
+
+      .order-summary { background: #f8f9fa; border-radius: 10px; padding: 20px; text-align: left; display: inline-block; width: 100%; box-sizing: border-box; border: 1px solid #eee; margin-bottom: 20px; }
+      .summary-title { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; font-weight: bold; color: #555; }
+      .summary-recipient { background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #eee; margin-bottom: 10px; }
+      .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; color: #444; }
+      .summary-prod { font-size: 13px; color: #666; padding-left: 10px; border-left: 3px solid #d4a373; margin-top: 5px; }
+
+      @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+      .loader { display: inline-block; width: 15px; height: 15px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .hide { display: none !important; }
+    </style>
+  </head>
+  <body>
+
+    <div class="container" id="formView">
+      <div id="liffStatus" style="font-size:12px; color:#ccc; text-align:center; margin-bottom:5px;">Loading...</div>
+      <h2>🎁 分批寄送資料建立</h2>
+      <p class="subtitle">輸入完所有親友後，點擊最下方按鈕產生明細</p>
+
+      <label>訂購人 (媽咪姓名+手機末5碼)</label>
+      <input type="text" id="hostInput" placeholder="例如：王小美23850">
+
+      <hr style="border:0; border-top:1px dashed #ddd; margin: 20px 0;">
+
+      <div id="recipientList"></div>
+
+      <div class="action-area">
+        <button type="button" class="btn btn-add" onclick="addCard()">＋ 新增下一位親友</button>
+        <button type="button" class="btn btn-submit" onclick="prepareAndSubmit()" id="sBtn">
+          🚀 全部輸入完畢，確認送出
+        </button>
+      </div>
+    </div>
+
+    <div class="container hide" id="successView">
+      <div class="success-card">
+        <i class="bi bi-check-circle-fill success-icon"></i>
+        <div class="success-title">資料整理完成！</div>
+        <p class="success-desc">請確認以下分批寄送明細，並複製回傳給我們。</p>
+
+        <div style="margin-top: 15px; margin-bottom: 25px;">
+          <textarea id="copyArea" readonly style="position:absolute; left:-9999px;"></textarea>
+          <div id="copyStatusMsg" style="font-weight:bold; font-size:16px; margin-bottom:15px; line-height:1.5;"></div>
+          <div id="manualCopyBox" style="display:none; margin-bottom:15px;">
+            <div style="color:#d63031; font-weight:bold; font-size:16px; margin-bottom:10px; line-height:1.5;">
+              請點下方按鈕複製明細內容後，再前往 LINE 回傳<br>請勿以截圖的方式傳送
+            </div>
+            <button class="btn btn-submit" onclick="manualCopy()" type="button" style="background:#d4a373;">
+              複製明細內容
+            </button>
+          </div>
+          <a id="goToLineArea" href="https://lin.ee/oOteG0d" target="_blank" style="text-decoration:none;">
+            <button class="btn btn-submit" type="button" style="background:#06c755;">
+              前往 LINE 回傳明細
+            </button>
+          </a>
+        </div>
+
+        <div class="order-summary" id="summaryBox">
+        </div>
+
+        <div style="margin-top: 20px;">
+           <button class="btn btn-outline" onclick="resetForm()">
+             填寫下一張 / 修改
+           </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var GAS_API_URL = "https://script.google.com/macros/s/AKfycbzve0c6nuXF3NVIDAXrMVgKlbglhFEV97TQu_umQ-1NkXA6cx5W-FSswkjAIg7wCEQ/exec";
+
+      var currentUserId = "";
+      var currentLineName = "";
+
+      var PRODUCT_OPTS = {
+        "曲奇餅乾": {
+            flavors: ["經典奶油", "濃可可", "伯爵茶", "綜合"],
+            packs: ["慶典白", "星夜藍", "心願粉"]
+        },
+        "蜂蜜蛋糕": { flavors: [], packs: [] },
+        "旋轉桶": { flavors: [], packs: [] }
+      };
+
+      window.onload = function() {
+        // 從 URL 參數讀取 host（取代 GAS 的 <?= hostParam ?>）
+        var params = new URLSearchParams(window.location.search);
+        var hostParam = params.get('host') || '';
+        if (hostParam) {
+          document.getElementById('hostInput').value = hostParam;
+        }
+
+        addCard();
+        initializeLiff('2008790381-tgI6Dqa6');
+      };
+
+      function initializeLiff(myLiffId) {
+        liff.init({ liffId: myLiffId })
+          .then(function() {
+            document.getElementById("liffStatus").style.display = "none";
+            if (liff.isLoggedIn()) {
+              liff.getProfile().then(function(profile) {
+                currentUserId = profile.userId;
+                currentLineName = profile.displayName;
+              });
+            } else {
+              console.log("Web Mode - 外部瀏覽器開啟");
+            }
+          })
+          .catch(function(err) {
+            console.error("LIFF Init Error:", err);
+            document.getElementById("liffStatus").innerText = "Web Mode";
+          });
+      }
+
+      function addCard() {
+        var list = document.getElementById("recipientList");
+        var index = list.children.length + 1;
+        var div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML =
+          '<div class="card-title">親友 #' + index + '</div>' +
+          (index > 1 ? '<button type="button" class="btn-remove" onclick="removeCard(this)">×</button>' : '') +
+          '<label>親友姓名</label>' +
+          '<input type="text" class="r-name" placeholder="例如：林小美">' +
+          '<label>聯絡電話</label>' +
+          '<input type="tel" class="r-phone" placeholder="09xx-xxx-xxx" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, \'\');">' +
+          '<label>配送地址</label>' +
+          '<input type="text" class="r-address" placeholder="縣市/區域/路段...">' +
+          '<div class="row">' +
+            '<div class="col-6">' +
+              '<label>預計收件日</label>' +
+              '<input type="date" class="r-date" onchange="updateCardNotices(this)">' +
+              '<div style="font-size:12px; color:#888; margin-top:2px;">*週日無配送</div>' +
+            '</div>' +
+            '<div class="col-6">' +
+              '<label>時段</label>' +
+              '<select class="r-time" onchange="updateCardNotices(this)">' +
+                '<option>不指定</option>' +
+                '<option>13:00前</option>' +
+                '<option>14:00~18:00</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div class="notice-box"></div>' +
+          '<div style="background:#fff8ee; padding:10px; border-radius:8px; margin-top:10px; border:1px dashed #d4a373;">' +
+            '<label style="margin-top:0; color:#8c6b2d; margin-bottom:10px;">📦 禮盒品項 (最多3項)</label>' +
+            '<div class="product-container"></div>' +
+            '<button type="button" class="btn-sm" onclick="addProductRow(this)" style="margin-top:5px;">＋ 新增品項</button>' +
+          '</div>' +
+          '<label>備註 (選填)</label>' +
+          '<input type="text" class="r-note" placeholder="例如：請放管理室...">';
+        list.appendChild(div);
+
+        var addProdBtn = div.querySelector('.btn-sm');
+        addProductRow(addProdBtn);
+      }
+
+      function updateCardNotices(element) {
+        var card = element.closest('.card');
+        var dateInput = card.querySelector('.r-date');
+        var timeInput = card.querySelector('.r-time');
+        var noticeBox = card.querySelector('.notice-box');
+
+        var messages = [];
+
+        if (dateInput.value) {
+            var inputDate = new Date(dateInput.value);
+            var today = new Date();
+            inputDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+
+            if (inputDate.getDay() === 0) {
+                alert("抱歉，週日物流無配送，請選擇週一至週六的日期。");
+                dateInput.value = "";
+                updateCardNotices(element);
+                return;
+            }
+            else if (inputDate < today) {
+                messages.push("⚠️ 貼心提醒：<br>您選擇了【過去的日期】唷！請您重新選擇。");
+            }
+            else if (inputDate.getTime() === today.getTime()) {
+                messages.push("⚠️ 貼心提醒：<br>最快出貨日為【明天】唷！請您重新選擇。");
+            }
+        }
+
+        if (timeInput.value === "13:00前") {
+            messages.push("⚠️ 貼心提醒：<br>若到貨時間是中午前，將為您安排【前兩天寄出禮盒】。");
+        }
+
+        if (messages.length > 0) {
+            noticeBox.innerHTML = messages.join("<br><br>");
+            noticeBox.style.display = "block";
+        } else {
+            noticeBox.style.display = "none";
+        }
+      }
+
+      function addProductRow(btn) {
+        var container = btn.previousElementSibling;
+        var currentCount = container.children.length;
+
+        if(currentCount >= 3) {
+            alert("每位親友最多只能填寫 3 個品項喔！");
+            return;
+        }
+
+        var row = document.createElement("div");
+        row.className = "product-row";
+
+        var delBtnHtml = currentCount > 0 ?
+            '<button type="button" class="btn-del-prod" onclick="this.parentElement.remove()">×</button>' : '';
+
+        row.innerHTML =
+            delBtnHtml +
+            '<div class="row" style="align-items: center;">' +
+                '<div class="col-8">' +
+                    '<select class="r-product" onchange="updateRowSpecs(this)">' +
+                        '<option value="蜂蜜蛋糕">蜂蜜蛋糕</option>' +
+                        '<option value="曲奇餅乾">曲奇餅乾</option>' +
+                        '<option value="旋轉桶">旋轉桶</option>' +
+                    '</select>' +
+                '</div>' +
+                '<div class="col-4">' +
+                    '<input type="number" class="r-qty" value="1" min="1" placeholder="數">' +
+                '</div>' +
+            '</div>' +
+            '<div class="spec-row">' +
+                '<select class="r-flavor" style="width:50%"></select>' +
+                '<select class="r-pack" style="width:50%"></select>' +
+            '</div>';
+        container.appendChild(row);
+
+        var select = row.querySelector('.r-product');
+        updateRowSpecs(select);
+      }
+
+      function updateRowSpecs(selectEl) {
+        var row = selectEl.closest('.product-row');
+        var specRow = row.querySelector('.spec-row');
+        var flavorSel = row.querySelector('.r-flavor');
+        var packSel = row.querySelector('.r-pack');
+
+        var prodName = selectEl.value;
+        var opts = PRODUCT_OPTS[prodName];
+
+        if (opts && opts.flavors.length > 0) {
+            flavorSel.innerHTML = opts.flavors.map(function(f) { return '<option value="' + f + '">' + f + '</option>'; }).join('');
+            packSel.innerHTML = opts.packs.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+            specRow.style.display = "flex";
+        } else {
+            specRow.style.display = "none";
+            flavorSel.innerHTML = "";
+            packSel.innerHTML = "";
+        }
+      }
+
+      function removeCard(btn) {
+        if(confirm("確定要刪除這位親友的資料嗎？")) {
+          btn.parentElement.remove();
+          reIndex();
+        }
+      }
+
+      function reIndex() {
+        var cards = document.querySelectorAll(".card");
+        cards.forEach(function(card, i) {
+          card.querySelector(".card-title").innerText = "親友 #" + (i + 1);
+        });
+      }
+
+      function prepareAndSubmit() {
+        var hostName = document.getElementById("hostInput").value.trim();
+        var cards = document.querySelectorAll(".card");
+        var btn = document.getElementById("sBtn");
+
+        if(hostName === "") { alert("請填寫訂購人(媽咪)資料！"); return; }
+
+        var dataList = [];
+        var summaryText = "";
+        var isValid = true;
+        var summaryHtmlInner = "";
+
+        cards.forEach(function(card, i) {
+          if (!isValid) return;
+
+          var name = card.querySelector(".r-name").value.trim();
+          var phone = card.querySelector(".r-phone").value.trim();
+          var address = card.querySelector(".r-address").value.trim();
+          var date = card.querySelector(".r-date").value;
+          var time = card.querySelector(".r-time").value;
+          var note = card.querySelector(".r-note").value.trim();
+
+          if(name === "" || phone === "" || address === "") {
+            alert("請檢查「親友 #" + (i+1) + "」的姓名、電話、地址是否都填寫了！");
+            isValid = false;
+            return;
+          }
+
+          var prodRows = card.querySelectorAll(".product-row");
+          var products = [];
+          var prodStr = "";
+          var prodHtml = "";
+
+          prodRows.forEach(function(row, idx) {
+             var pName = row.querySelector(".r-product").value;
+             var pQty = row.querySelector(".r-qty").value;
+             var flavor = row.querySelector(".r-flavor").value;
+             var pack = row.querySelector(".r-pack").value;
+
+             var specStr = "";
+             if(flavor && pack) {
+                 specStr = "(" + flavor + "/" + pack + ")";
+             }
+
+             products.push({ product: pName, spec: specStr, qty: pQty });
+
+             if(idx > 0) prodStr += "、";
+             prodStr += pName + specStr + " x " + pQty + " 盒";
+
+             prodHtml += '<div class="summary-prod">• ' + pName + ' ' + specStr + ' x ' + pQty + ' 盒</div>';
+          });
+
+          var finalNote = note;
+          if (time === "13:00前") {
+              finalNote = "【13:00前到貨/前兩天寄出】 " + finalNote;
+          }
+
+          dataList.push({ name: name, phone: phone, address: address, date: date, time: time, products: products, note: finalNote });
+
+          summaryText += "\n 親友" + (i+1) + "：" + name + "\n";
+          summaryText += " 電話：" + phone + "\n";
+          summaryText += " 地址：" + address + "\n";
+          summaryText += " 收件：" + date + " (" + time + ")\n";
+          summaryText += " 品項：" + prodStr + "\n";
+          if(finalNote) summaryText += " 備註：" + finalNote + "\n";
+          summaryText += "-------------------\n";
+
+          summaryHtmlInner +=
+            '<div class="summary-recipient">' +
+              '<div class="summary-row" style="font-weight:bold; color:#000;">' +
+                 '<span>親友 #' + (i+1) + ' ' + name + '</span>' +
+                 '<span>' + date + '</span>' +
+              '</div>' +
+              '<div class="summary-row"><span>電話：' + phone + '</span></div>' +
+              '<div class="summary-row"><span>地址：' + address + '</span></div>' +
+              '<div style="margin-top:5px;">' +
+                 prodHtml +
+              '</div>' +
+              (finalNote ? '<div style="margin-top:5px; font-size:12px; color:#888;">備註：' + finalNote + '</div>' : '') +
+            '</div>';
+        });
+
+        if (!isValid) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loader"></span> 資料處理中...';
+
+        var finalText =
+          "【分批寄送明細】\n" +
+          "訂購媽咪：" + hostName + "\n" +
+          "-------------------\n" +
+          summaryText +
+          "\n以上資料確認無誤，請協助安排寄送！";
+
+        document.getElementById("copyArea").value = finalText;
+
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
+          body: JSON.stringify({ action: 'processBatch', hostName: hostName, dataList: dataList, userId: currentUserId, lineName: currentLineName })
+        })
+        .then(function(response) { return response.text(); })
+        .then(function(text) {
+          var res;
+          try { res = JSON.parse(text); } catch(e) {
+            console.error("JSON parse error:", text);
+            throw new Error("伺服器回應格式錯誤");
+          }
+          if (res.status === "success") {
+            showSuccess(hostName, summaryHtmlInner);
+            autoSendOrder(finalText);
+          } else {
+            alert(res.msg || "送出失敗，請稍後再試");
+            btn.disabled = false;
+            btn.innerHTML = '🚀 全部輸入完畢，確認送出';
+          }
+        })
+        .catch(function(err) {
+          console.error("API Error:", err);
+          alert("發生錯誤：" + err.message + "\n請稍後再試");
+          btn.disabled = false;
+          btn.innerHTML = '🚀 全部輸入完畢，確認送出';
+        });
+      }
+
+      function showSuccess(hostName, summaryHtmlInner) {
+        document.getElementById("formView").classList.add("hide");
+        document.getElementById("successView").classList.remove("hide");
+
+        var summaryHtml =
+           '<div class="summary-title">📋 寄送資料匯總</div>' +
+           '<div style="text-align:center; font-weight:bold; margin-bottom:15px; color:#d4a373;">訂購媽咪：' + hostName + '</div>' +
+           summaryHtmlInner;
+
+        document.getElementById("summaryBox").innerHTML = summaryHtml;
+        window.scrollTo(0, 0);
+      }
+
+      // ===== 自動發送到 LINE 聊天室 =====
+      function autoSendOrder(orderText) {
+        var copyStatusMsg = document.getElementById("copyStatusMsg");
+        var manualCopyBox = document.getElementById("manualCopyBox");
+        var goToLineArea = document.getElementById("goToLineArea");
+
+        if (typeof liff !== 'undefined' && liff.isInClient()) {
+          liff.sendMessages([{
+            type: 'text',
+            text: orderText
+          }])
+          .then(function() {
+            manualCopyBox.style.display = "none";
+            copyStatusMsg.innerHTML =
+              '<span style="color:#28a745; font-size:18px;">✅ 明細已自動傳送至聊天室！</span><br>' +
+              '<span style="color:#888; font-size:14px;">無需手動複製，系統已為您完成</span>';
+            goToLineArea.style.display = "none";
+          })
+          .catch(function(err) {
+            console.error('LIFF sendMessages error:', err);
+            autoCopyOrder();
+          });
+        } else {
+          autoCopyOrder();
+        }
+      }
+
+      // ===== 自動複製到剪貼簿（fallback） =====
+      function autoCopyOrder() {
+        var area = document.getElementById("copyArea");
+        navigator.clipboard.writeText(area.value).then(function() {
+          document.getElementById("copyStatusMsg").innerHTML = '<span style="color:#28a745;">明細內容已自動複製！</span><br><span style="color:#d63031; font-size:14px;">請點擊下方按鈕，前往 LINE 貼上回傳</span>';
+        }).catch(function() {
+          document.getElementById("copyStatusMsg").innerHTML = '<span style="color:#e67e22;">無法自動複製，請手動複製</span>';
+          document.getElementById("manualCopyBox").style.display = "block";
+        });
+      }
+
+      function manualCopy() {
+        var area = document.getElementById("copyArea");
+        navigator.clipboard.writeText(area.value).then(function() {
+          document.getElementById("copyStatusMsg").innerHTML = '<span style="color:#28a745;">明細內容已複製！</span><br><span style="color:#d63031; font-size:14px;">請點擊下方按鈕，前往 LINE 貼上回傳</span>';
+          document.getElementById("manualCopyBox").style.display = "none";
+        }).catch(function() {
+          alert("複製失敗，請長按明細內容手動複製後，前往 LINE 貼上");
+        });
+      }
+
+      function resetForm() {
+        document.getElementById("successView").classList.add("hide");
+        document.getElementById("formView").classList.remove("hide");
+        document.getElementById("copyStatusMsg").innerHTML = "";
+        document.getElementById("manualCopyBox").style.display = "none";
+
+        document.getElementById("recipientList").innerHTML = "";
+
+        var btn = document.getElementById("sBtn");
+        btn.disabled = false;
+        btn.innerHTML = '🚀 全部輸入完畢，確認送出';
+
+        addCard();
+        window.scrollTo(0, 0);
+      }
+    </script>
+  </body>
+</html>
