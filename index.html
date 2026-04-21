@@ -280,9 +280,7 @@
             }
         }
 
-        if (timeInput.value === "13:00前") {
-            messages.push("⚠️ 貼心提醒：<br>若到貨時間是中午前，將為您安排【前兩天寄出禮盒】。");
-        }
+        messages.push("⚠️ 貼心提醒：<br>為確保貨運即時送達，將為您安排【兩天前寄出禮盒】。");
 
         if (messages.length > 0) {
             noticeBox.innerHTML = messages.join("<br><br>");
@@ -417,10 +415,7 @@
              prodHtml += '<div class="summary-prod">• ' + pName + ' ' + specStr + ' x ' + pQty + ' 盒</div>';
           });
 
-          var finalNote = note;
-          if (time === "13:00前") {
-              finalNote = "【13:00前到貨/前兩天寄出】 " + finalNote;
-          }
+          var finalNote = "【兩天前寄出禮盒】 " + note;
 
           dataList.push({ name: name, phone: phone, address: address, date: date, time: time, products: products, note: finalNote });
 
