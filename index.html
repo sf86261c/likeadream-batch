@@ -7,8 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
-      :root { --primary: #d4a373; --text: #4a4a4a; --danger: #d63031; --success: #52b788; --line-green: #06c755; }
+      :root { --primary: #d4a373; --primary-dark: #b07c4a; --text: #4a4a4a; --danger: #d63031; --success: #52b788; --line-green: #06c755; }
       body {
         font-family: 'Noto Sans TC', sans-serif;
         margin: 0; padding: 20px; color: var(--text);
@@ -26,14 +27,15 @@
 
       label { display: block; margin-top: 10px; margin-bottom: 4px; font-weight: bold; color: #6b4f4f; font-size: 0.95rem; }
 
-      input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #fff; transition: 0.3s; }
-      input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.2); }
+      input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #fff; transition: border-color .25s, box-shadow .25s, transform .25s; }
+      input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(212,163,115,.18); transform: translateY(-1px); }
 
       #hostInput { background-color: #fff8ee; border: 2px solid #e4dccb; color: #8c6b2d; font-weight: bold; }
 
       .card {
-        background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; margin-bottom: 20px;
+        background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 20px; margin-bottom: 20px;
         position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--primary);
+        animation: softDrop .45s cubic-bezier(.34,1.56,.64,1);
       }
       .card-title { font-weight: bold; color: #aaa; font-size: 0.9rem; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
 
@@ -43,7 +45,9 @@
         width: 30px; height: 30px; border-radius: 50%;
         font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
       }
-      .btn-remove:hover { background: #ffcccc; }
+      .btn-remove { transition: transform .15s cubic-bezier(.34,1.56,.64,1), background .15s; }
+      .btn-remove:hover { background: #ffcccc; transform: scale(1.08); }
+      .btn-remove:active { transform: scale(.9); }
 
       .notice-box {
         display: none;
@@ -51,7 +55,8 @@
         padding: 10px;
         background-color: #fff0f0;
         border-left: 4px solid #d63031;
-        border-radius: 4px;
+        border-radius: 10px;
+        animation: softDrop .4s cubic-bezier(.34,1.56,.64,1);
         color: #d63031;
         font-size: 13px;
         line-height: 1.5;
@@ -59,7 +64,8 @@
       }
 
       .product-row {
-        background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 8px; position: relative;
+        background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 12px; margin-bottom: 8px; position: relative;
+        animation: softDrop .4s cubic-bezier(.34,1.56,.64,1);
       }
       .btn-del-prod {
         position: absolute; right: -8px; top: -8px;
@@ -69,8 +75,10 @@
 
       .btn-sm {
         padding: 8px 15px; font-size: 14px; background: #fff; border: 1px dashed #d4a373; color: #d4a373; border-radius: 20px; cursor: pointer; width: auto; display: inline-block;
+        transition: transform .15s cubic-bezier(.34,1.56,.64,1), background .15s;
       }
-      .btn-sm:hover { background: #fff8ee; }
+      .btn-sm:hover { background: #fff8ee; transform: translateY(-1px); }
+      .btn-sm:active { transform: scale(.95); }
 
       .row { display: flex; gap: 10px; }
       .col-6 { flex: 1; } .col-8 { flex: 2; } .col-4 { flex: 1; }
@@ -79,14 +87,22 @@
         .col-6, .col-8, .col-4 { width: 100%; }
       }
 
-      .spec-row { display: flex; gap: 5px; margin-top: 5px; display: none; }
+      .spec-row { display: flex; gap: 5px; margin-top: 5px; display: none; animation: softDrop .4s cubic-bezier(.34,1.56,.64,1); }
       .spec-row select { font-size: 14px; padding: 8px; background: #f9f9f9; }
 
       .action-area { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
-      .btn { width: 100%; padding: 15px; border: none; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+      .btn { width: 100%; padding: 15px; border: none; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .2s, border-bottom-width .1s; }
       .btn-add { background: #fff; border: 2px dashed #ccc; color: #888; }
-      .btn-submit { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(212, 163, 115, 0.4); font-size: 18px; }
+      .btn-add:hover { transform: translateY(-1px); border-color: var(--primary); color: var(--primary); }
+      .btn-add:active { transform: scale(.97); }
+      /* 送出按鈕：3D 按壓（改編自 21st.dev Pop Button）+ hover 抬升 */
+      .btn-submit { position: relative; background: var(--primary); color: white; border-bottom: 5px solid var(--primary-dark); box-shadow: 0 6px 14px rgba(212, 163, 115, 0.35); font-size: 18px; transform-origin: bottom; }
+      .btn-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(212, 163, 115, 0.45); }
+      .btn-submit:active:not(:disabled) { transform: translateY(2px) scaleY(.96); border-bottom-width: 2px; box-shadow: 0 3px 8px rgba(212, 163, 115, 0.3); }
+      .btn-submit:disabled { opacity: .75; cursor: default; }
       .btn-outline { background: transparent; border: 1px solid #666; color: #666; margin-top: 10px; }
+      .btn-outline:hover { transform: translateY(-1px); }
+      .btn-outline:active { transform: scale(.97); }
 
       .success-card { text-align: center; padding: 10px 0; }
       .success-icon { font-size: 4rem; color: var(--success); margin-bottom: 15px; }
@@ -100,27 +116,58 @@
       .summary-prod { font-size: 13px; color: #666; padding-left: 10px; border-left: 3px solid #d4a373; margin-top: 5px; }
 
       @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-      .loader { display: inline-block; width: 15px; height: 15px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+      .loader { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; vertical-align: -3px; animation: spin .7s linear infinite; margin-right: 8px; }
       @keyframes spin { to { transform: rotate(360deg); } }
 
       .hide { display: none !important; }
+
+      /* ===== 進場動畫（改編自 21st.dev Blur Fade：模糊+上浮+微彈，逐段錯開）===== */
+      @keyframes blurFadeUp {
+        from { opacity: 0; transform: translateY(16px) scale(.98); filter: blur(6px); }
+        to   { opacity: 1; transform: translateY(0) scale(1);   filter: blur(0); }
+      }
+      .enter { animation: blurFadeUp .6s cubic-bezier(.22,.9,.35,1.15) both; animation-delay: calc(var(--i, 0) * 90ms); }
+      @keyframes cakeWiggle { 0%,100% { transform: rotate(0); } 20% { transform: rotate(-12deg) scale(1.15); } 45% { transform: rotate(10deg) scale(1.1); } 70% { transform: rotate(-5deg); } }
+      .cake-emoji { display: inline-block; animation: cakeWiggle 1s ease-in-out .6s both; }
+
+      /* 條件出現的區塊：軟著陸（.card / .product-row / .spec-row / .notice-box 共用） */
+      @keyframes softDrop { from { opacity: 0; transform: translateY(-8px) scale(.97); } to { opacity: 1; transform: none; } }
+      #manualCopyBox { animation: softDrop .4s cubic-bezier(.34,1.56,.64,1); }
+
+      /* ===== 畫面切換轉場：表單淡出上飄 → 成功畫面果凍彈入 ===== */
+      @keyframes viewOut { to { opacity: 0; transform: translateY(-20px) scale(.97); filter: blur(4px); } }
+      .view-out { animation: viewOut .35s ease-in both; pointer-events: none; }
+      @keyframes viewIn { from { opacity: 0; transform: translateY(30px) scale(.94); } 70% { transform: translateY(-4px) scale(1.01); } to { opacity: 1; transform: none; } }
+      #successView.show { animation: viewIn .55s cubic-bezier(.34,1.56,.64,1) both; }
+      @keyframes iconPop { 0% { transform: scale(0) rotate(-30deg); } 55% { transform: scale(1.25) rotate(8deg); } 75% { transform: scale(.92) rotate(-3deg); } 100% { transform: scale(1) rotate(0); } }
+      #successView.show .success-icon { animation: iconPop .7s cubic-bezier(.34,1.56,.64,1) .15s both; }
+      .success-icon { display: inline-block; }
+
+      /* 粒子（改編自 21st.dev Particle Button） */
+      .burst-dot { position: fixed; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 9999; }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+      }
     </style>
   </head>
   <body>
 
     <div class="container" id="formView">
       <div id="liffStatus" style="font-size:12px; color:#ccc; text-align:center; margin-bottom:5px;">Loading...</div>
-      <h2>🎁 分批寄送資料建立</h2>
-      <p class="subtitle">輸入完所有親友後，點擊最下方按鈕產生明細</p>
+      <h2 class="enter" style="--i:0;"><span class="cake-emoji">🎁</span> 分批寄送資料建立</h2>
+      <p class="subtitle enter" style="--i:1;">輸入完所有親友後，點擊最下方按鈕產生明細</p>
 
-      <label>訂購人 (媽咪姓名+手機末5碼)</label>
-      <input type="text" id="hostInput" placeholder="例如：王小美23850">
+      <div class="enter" style="--i:2;">
+        <label>訂購人 (媽咪姓名+手機末5碼)</label>
+        <input type="text" id="hostInput" placeholder="例如：王小美23850">
+      </div>
 
       <hr style="border:0; border-top:1px dashed #ddd; margin: 20px 0;">
 
-      <div id="recipientList"></div>
+      <div id="recipientList" class="enter" style="--i:3;"></div>
 
-      <div class="action-area">
+      <div class="action-area enter" style="--i:4;">
         <button type="button" class="btn btn-add" onclick="addCard()">＋ 新增下一位親友</button>
         <button type="button" class="btn btn-submit" onclick="prepareAndSubmit()" id="sBtn">
           🚀 全部輸入完畢，確認送出
@@ -131,12 +178,12 @@
     <div class="container hide" id="successView">
       <div class="success-card">
         <i class="bi bi-check-circle-fill success-icon"></i>
-        <div class="success-title">資料整理完成！</div>
-        <p class="success-desc">請確認以下分批寄送明細，並複製回傳給我們。</p>
+        <div class="success-title enter" style="--i:1;">資料整理完成！</div>
+        <p class="success-desc enter" style="--i:2;">請確認以下分批寄送明細，並複製回傳給我們。</p>
 
         <div style="margin-top: 15px; margin-bottom: 25px;">
           <textarea id="copyArea" readonly style="position:absolute; left:-9999px;"></textarea>
-          <div id="copyStatusMsg" style="font-weight:bold; font-size:16px; margin-bottom:15px; line-height:1.5;"></div>
+          <div id="copyStatusMsg" class="enter" style="--i:3; font-weight:bold; font-size:16px; margin-bottom:15px; line-height:1.5;"></div>
           <div id="manualCopyBox" style="display:none; margin-bottom:15px;">
             <div style="color:#d63031; font-weight:bold; font-size:16px; margin-bottom:10px; line-height:1.5;">
               請點下方按鈕複製明細內容後，再前往 LINE 回傳<br>請勿以截圖的方式傳送
@@ -145,17 +192,17 @@
               複製明細內容
             </button>
           </div>
-          <a id="goToLineArea" href="https://lin.ee/oOteG0d" target="_blank" style="text-decoration:none;">
+          <a id="goToLineArea" href="https://lin.ee/oOteG0d" target="_blank" class="enter" style="--i:4; text-decoration:none; display:block;">
             <button class="btn btn-submit" type="button" style="background:#06c755;">
               前往 LINE 回傳明細
             </button>
           </a>
         </div>
 
-        <div class="order-summary" id="summaryBox">
+        <div class="order-summary enter" style="--i:5;" id="summaryBox">
         </div>
 
-        <div style="margin-top: 20px;">
+        <div class="enter" style="--i:6; margin-top: 20px;">
            <button class="btn btn-outline" onclick="resetForm()">
              填寫下一張 / 修改
            </button>
@@ -363,6 +410,51 @@
         });
       }
 
+      // ===== 粒子爆發（改編自 21st.dev Particle Button）=====
+      function burstParticles(btn) {
+        var rect = btn.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var colors = ['#f8b4c4', '#d4a373', '#ffd97d', '#a8e6cf', '#fff'];
+        for (var i = 0; i < 10; i++) {
+          var el = document.createElement('div');
+          el.className = 'burst-dot';
+          el.style.left = cx + 'px';
+          el.style.top = cy + 'px';
+          el.style.background = colors[i % colors.length];
+          document.body.appendChild(el);
+          var dx = (i % 2 ? 1 : -1) * (Math.random() * 60 + 25);
+          var dy = -Math.random() * 60 - 25;
+          if (el.animate) {
+            el.animate([
+              { transform: 'translate(0,0) scale(0)', opacity: 1 },
+              { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.1)', opacity: 1, offset: 0.5 },
+              { transform: 'translate(' + (dx * 1.5) + 'px,' + (dy * 1.6) + 'px) scale(0)', opacity: 0 }
+            ], { duration: 650, delay: i * 35, easing: 'ease-out' }).onfinish = (function(node) {
+              return function() { node.remove(); };
+            })(el);
+          } else {
+            el.remove();
+          }
+        }
+      }
+
+      // ===== 彩帶慶祝（改編自 21st.dev magicui Confetti，奶油粉彩配色）=====
+      function fireConfetti() {
+        if (typeof confetti === 'undefined') return;
+        var colors = ['#f8b4c4', '#d4a373', '#ffd97d', '#a8e6cf', '#fff1e6'];
+        confetti({ particleCount: 70, spread: 80, origin: { y: 0.35 }, colors: colors, scalar: 0.95, shapes: ['circle'], ticks: 120 });
+        setTimeout(function() {
+          confetti({ particleCount: 40, spread: 110, origin: { y: 0.3 }, colors: colors, scalar: 0.7, shapes: ['circle'], ticks: 100 });
+        }, 180);
+        try {
+          var gift = confetti.shapeFromText({ text: '🎁', scalar: 2 });
+          setTimeout(function() {
+            confetti({ particleCount: 8, spread: 70, origin: { y: 0.35 }, shapes: [gift], scalar: 2, ticks: 90, gravity: 0.8 });
+          }, 120);
+        } catch (e) { /* 舊瀏覽器不支援 emoji 形狀就略過 */ }
+      }
+
       function prepareAndSubmit() {
         var hostName = document.getElementById("hostInput").value.trim();
         var cards = document.querySelectorAll(".card");
@@ -446,6 +538,7 @@
 
         btn.disabled = true;
         btn.innerHTML = '<span class="loader"></span> 資料處理中...';
+        burstParticles(btn);
 
         var finalText =
           "【分批寄送】明細\n" +
@@ -492,17 +585,28 @@
         });
       }
 
+      // ===== 顯示成功畫面（表單淡出 → 成功畫面果凍彈入 + 彩帶）=====
       function showSuccess(hostName, summaryHtmlInner) {
-        document.getElementById("formView").classList.add("hide");
-        document.getElementById("successView").classList.remove("hide");
+        var formView = document.getElementById("formView");
+        var successView = document.getElementById("successView");
 
-        var summaryHtml =
-           '<div class="summary-title">📋 寄送資料匯總</div>' +
-           '<div style="text-align:center; font-weight:bold; margin-bottom:15px; color:#d4a373;">訂購媽咪：' + hostName + '</div>' +
-           summaryHtmlInner;
+        formView.classList.add("view-out");
 
-        document.getElementById("summaryBox").innerHTML = summaryHtml;
-        window.scrollTo(0, 0);
+        setTimeout(function() {
+          formView.classList.add("hide");
+
+          var summaryHtml =
+             '<div class="summary-title">📋 寄送資料匯總</div>' +
+             '<div style="text-align:center; font-weight:bold; margin-bottom:15px; color:#d4a373;">訂購媽咪：' + hostName + '</div>' +
+             summaryHtmlInner;
+
+          document.getElementById("summaryBox").innerHTML = summaryHtml;
+
+          successView.classList.remove("hide");
+          successView.classList.add("show");
+          window.scrollTo(0, 0);
+          setTimeout(fireConfetti, 300);
+        }, 360);
       }
 
       // ===== 自動發送到 LINE（三層保險） =====
@@ -604,7 +708,9 @@
 
       function resetForm() {
         document.getElementById("successView").classList.add("hide");
+        document.getElementById("successView").classList.remove("show");
         document.getElementById("formView").classList.remove("hide");
+        document.getElementById("formView").classList.remove("view-out");
         document.getElementById("copyStatusMsg").innerHTML = "";
         document.getElementById("manualCopyBox").style.display = "none";
 
