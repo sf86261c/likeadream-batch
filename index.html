@@ -212,6 +212,7 @@
 
     <script>
       var GAS_API_URL = "https://script.google.com/macros/s/AKfycbzve0c6nuXF3NVIDAXrMVgKlbglhFEV97TQu_umQ-1NkXA6cx5W-FSswkjAIg7wCEQ/exec";
+      var FORM_RELAY_API = "https://likeadreamcastella.zeabur.app/api/form-relay";
 
       var currentUserId = "";
       var currentLineName = "";
@@ -247,7 +248,7 @@
                 currentLineName = profile.displayName;
               });
             } else {
-              console.log("Web Mode - 外部瀏覽器開啟");
+              liff.login();
             }
           })
           .catch(function(err) {
@@ -609,7 +610,25 @@
         }, 360);
       }
 
-      // ===== 自動發送到 LINE（三層保險） =====
+      // ===== 伺服器回執：LIFF token 換 OA 推播（sendMessages 打不到或非 LINE 內建瀏覽器時的退路） =====
+      function tryServerRelay(texts) {
+        var token = null;
+        try {
+          token = (typeof liff !== 'undefined' && liff.getAccessToken) ? liff.getAccessToken() : null;
+        } catch (e) {
+          token = null;
+        }
+        if (!token) return Promise.resolve(false);
+        return fetch(FORM_RELAY_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accessToken: token, texts: texts })
+        })
+          .then(function(response) { return response.ok; })
+          .catch(function() { return false; });
+      }
+
+      // ===== 自動發送到 LINE（sendMessages 優先，退伺服器回執，再退剪貼簿） =====
       function autoSendOrder(orderText, clipboardOk) {
         var copyStatusMsg = document.getElementById("copyStatusMsg");
         var manualCopyBox = document.getElementById("manualCopyBox");
@@ -617,8 +636,19 @@
 
         if (typeof liff === 'undefined') { showCopyResult(clipboardOk); return; }
 
+        function relayThenFallback() {
+          tryServerRelay([orderText]).then(function(ok) {
+            if (ok) {
+              manualCopyBox.style.display = "none";
+              goToLineArea.style.display = "none";
+              copyStatusMsg.innerHTML =
+                '<span style="color:#28a745; font-size:18px;">✅ 訂單明細已傳送至官方 LINE 對話！</span>';
+            } else { showCopyResult(clipboardOk); }
+          });
+        }
+
         function trySendMessages() {
-          if (!liff.isInClient()) { trySharePicker(); return; }
+          if (!liff.isInClient()) { relayThenFallback(); return; }
           liff.sendMessages([{ type: 'text', text: orderText }])
             .then(function() {
               manualCopyBox.style.display = "none";
@@ -629,25 +659,7 @@
             })
             .catch(function(err) {
               console.error('sendMessages failed:', err);
-              trySharePicker();
-            });
-        }
-
-        function trySharePicker() {
-          if (!liff.isApiAvailable('shareTargetPicker')) { showCopyResult(clipboardOk); return; }
-          liff.shareTargetPicker([{ type: 'text', text: orderText }])
-            .then(function(res) {
-              if (res) {
-                manualCopyBox.style.display = "none";
-                goToLineArea.style.display = "none";
-                copyStatusMsg.innerHTML =
-                  '<span style="color:#28a745; font-size:18px;">✅ 明細已成功分享！</span><br>' +
-                  '<span style="color:#888; font-size:14px;">明細已傳送至您選擇的聊天室</span>';
-              } else { showCopyResult(clipboardOk); }
-            })
-            .catch(function(err) {
-              console.error('shareTargetPicker failed:', err);
-              showCopyResult(clipboardOk);
+              relayThenFallback();
             });
         }
 
