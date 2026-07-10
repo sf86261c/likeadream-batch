@@ -213,6 +213,32 @@
     <script>
       var GAS_API_URL = "https://script.google.com/macros/s/AKfycbzve0c6nuXF3NVIDAXrMVgKlbglhFEV97TQu_umQ-1NkXA6cx5W-FSswkjAIg7wCEQ/exec";
       var FORM_RELAY_API = "https://likeadreamcastella.zeabur.app/api/form-relay";
+      var BLOCKED_DATES_API = "https://likeadreamcastella.zeabur.app/api/blocked-dates";
+      var FORM_ID = "batch";
+      var blockedDates = [];
+
+      function loadBlockedDates() {
+        fetch(BLOCKED_DATES_API)
+          .then(function(res) { return res.ok ? res.json() : null; })
+          .then(function(data) {
+            var entries = (data && data.entries) || [];
+            blockedDates = entries.filter(function(e) {
+              return e && e.forms && e.forms.indexOf(FORM_ID) !== -1 && typeof e.start === 'string' && typeof e.end === 'string';
+            });
+            document.querySelectorAll('.r-date').forEach(function(el) {
+              if (el.value) updateCardNotices(el);
+            });
+          })
+          .catch(function() {});
+      }
+
+      function findBlockedEntry(dateStr) {
+        for (var i = 0; i < blockedDates.length; i++) {
+          var e = blockedDates[i];
+          if (dateStr >= e.start && dateStr <= e.end) return e;
+        }
+        return null;
+      }
 
       var currentUserId = "";
       var currentLineName = "";
@@ -236,6 +262,7 @@
 
         addCard();
         initializeLiff('2008790381-tgI6Dqa6');
+        loadBlockedDates();
       };
 
       function initializeLiff(myLiffId) {
@@ -309,6 +336,13 @@
         var messages = [];
 
         if (dateInput.value) {
+            var be = findBlockedEntry(dateInput.value);
+            if (be) {
+                alert("🚫 " + be.reason + "，請改選其他日期。");
+                dateInput.value = "";
+                updateCardNotices(element);
+                return;
+            }
             var inputDate = new Date(dateInput.value);
             var today = new Date();
             inputDate.setHours(0,0,0,0);
@@ -482,6 +516,15 @@
             alert("請檢查「親友 #" + (i+1) + "」的姓名、電話、地址是否都填寫了！");
             isValid = false;
             return;
+          }
+
+          if (date) {
+            var be = findBlockedEntry(date);
+            if (be) {
+              alert("「親友 #" + (i+1) + "」的收件日 " + be.reason + "，請重新選擇！");
+              isValid = false;
+              return;
+            }
           }
 
           var prodRows = card.querySelectorAll(".product-row");
