@@ -243,6 +243,11 @@
       var currentUserId = "";
       var currentLineName = "";
 
+      function createSubmissionId() {
+        if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+        return 'submission-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+      }
+
       var PRODUCT_OPTS = {
         "曲奇餅乾": {
             flavors: ["經典奶油", "濃可可", "伯爵茶", "綜合"],
@@ -591,6 +596,7 @@
           summaryText +
           "\n以上資料確認無誤，請協助安排寄送！";
 
+        var submissionId = createSubmissionId();
         document.getElementById("copyArea").value = finalText;
 
         // ★ 在 fetch 之前先複製（此時仍在使用者點擊的手勢範圍內）
@@ -603,7 +609,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           redirect: 'follow',
-          body: JSON.stringify({ action: 'processBatch', hostName: hostName, dataList: dataList, userId: currentUserId, lineName: currentLineName })
+          body: JSON.stringify({ action: 'processBatch', hostName: hostName, dataList: dataList, userId: currentUserId, lineName: currentLineName, submissionId: submissionId })
         })
         .then(function(response) { return response.text(); })
         .then(function(text) {
@@ -614,7 +620,7 @@
           }
           if (res.status === "success") {
             showSuccess(hostName, summaryHtmlInner);
-            autoSendOrder(finalText, clipboardOk);
+            autoSendOrder(finalText, clipboardOk, submissionId);
           } else {
             alert(res.msg || "送出失敗，請稍後再試");
             btn.disabled = false;
@@ -654,7 +660,7 @@
       }
 
       // ===== 伺服器回執：LIFF token 換 OA 推播（sendMessages 打不到或非 LINE 內建瀏覽器時的退路） =====
-      function tryServerRelay(texts) {
+      function tryServerRelay(texts, submissionId) {
         var token = null;
         try {
           token = (typeof liff !== 'undefined' && liff.getAccessToken) ? liff.getAccessToken() : null;
@@ -665,14 +671,35 @@
         return fetch(FORM_RELAY_API, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ accessToken: token, texts: texts })
+          body: JSON.stringify({ accessToken: token, texts: texts, submissionId: submissionId, formType: FORM_ID })
         })
           .then(function(response) { return response.ok; })
           .catch(function() { return false; });
       }
 
       // ===== 自動發送到 LINE（sendMessages 優先，退伺服器回執，再退剪貼簿） =====
-      function autoSendOrder(orderText, clipboardOk) {
+      function notifyOnly(texts, submissionId) {
+        var NOTIFY_TIMEOUT_MS = 1500;
+        var token = null;
+        try {
+          token = (typeof liff !== 'undefined' && liff.getAccessToken) ? liff.getAccessToken() : null;
+        } catch (e) {
+          token = null;
+        }
+        if (!token) return Promise.resolve(false);
+        var request = fetch(FORM_RELAY_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          keepalive: true,
+          body: JSON.stringify({ accessToken: token, texts: texts, submissionId: submissionId, formType: FORM_ID, notificationOnly: true })
+        }).then(function(response) { return response.ok; }).catch(function() { return false; });
+        return Promise.race([
+          request,
+          new Promise(function(resolve) { setTimeout(function() { resolve(false); }, NOTIFY_TIMEOUT_MS); })
+        ]);
+      }
+
+      function autoSendOrder(orderText, clipboardOk, submissionId) {
         var copyStatusMsg = document.getElementById("copyStatusMsg");
         var manualCopyBox = document.getElementById("manualCopyBox");
         var goToLineArea = document.getElementById("goToLineArea");
@@ -680,7 +707,7 @@
         if (typeof liff === 'undefined') { showCopyResult(clipboardOk); return; }
 
         function relayThenFallback() {
-          tryServerRelay([orderText]).then(function(ok) {
+          tryServerRelay([orderText], submissionId).then(function(ok) {
             if (ok) {
               manualCopyBox.style.display = "none";
               goToLineArea.style.display = "none";
@@ -694,11 +721,13 @@
           if (!liff.isInClient()) { relayThenFallback(); return; }
           liff.sendMessages([{ type: 'text', text: orderText }])
             .then(function() {
+              return notifyOnly([orderText], submissionId).then(function() {
               manualCopyBox.style.display = "none";
               goToLineArea.style.display = "none";
               copyStatusMsg.innerHTML =
                 '<span style="color:#28a745; font-size:18px;">✅ 明細已自動傳送至聊天室！</span><br>' +
                 '<span style="color:#888; font-size:14px;">無需手動複製，系統已為您完成</span>';
+            });
             })
             .catch(function(err) {
               console.error('sendMessages failed:', err);
