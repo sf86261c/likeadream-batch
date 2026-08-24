@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LikeaDream 分批寄送資料建立</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -13,6 +13,7 @@
       body {
         font-family: 'Noto Sans TC', sans-serif;
         margin: 0; padding: 20px; color: var(--text);
+        font-size: 16px; overflow-x: hidden;
         background: #fdf5e6;
         min-height: 100vh;
       }
@@ -22,10 +23,10 @@
         padding: 25px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         padding-bottom: 80px;
       }
-      h2 { text-align: center; color: #6b4f4f; margin-bottom: 5px; }
+      h2 { text-align: center; color: #6b4f4f; margin-bottom: 5px; font-size: 20px; }
       .subtitle { text-align: center; color: #888; font-size: 0.9rem; margin-bottom: 20px; }
 
-      label { display: block; margin-top: 10px; margin-bottom: 4px; font-weight: bold; color: #6b4f4f; font-size: 0.95rem; }
+      label { display: block; margin-top: 10px; margin-bottom: 4px; font-weight: bold; color: #6b4f4f; font-size: 16px; }
 
       input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #fff; transition: border-color .25s, box-shadow .25s, transform .25s; }
       input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(212,163,115,.18); transform: translateY(-1px); }
@@ -105,9 +106,25 @@
       .btn-outline:active { transform: scale(.97); }
 
       .success-card { text-align: center; padding: 10px 0; }
-      .success-icon { font-size: 4rem; color: var(--success); margin-bottom: 15px; }
-      .success-title { font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 10px; }
-      .success-desc { color: #888; font-size: 14px; margin-bottom: 20px; }
+      .success-icon { font-size: 4rem; color: #b07c4a; margin-bottom: 15px; }
+      .success-icon.sent { color: var(--success); }
+      .success-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 10px; }
+      .success-desc { color: #6b4f4f; font-size: 16px; margin-bottom: 20px; }
+      .stored-status { color: #6b4f4f; font-size: 16px; line-height: 1.6; margin: 0 0 18px; }
+      .customer-action-card { display: none; text-align: left; margin: 0 0 20px; padding: 18px 16px; background: #fff5f5; border: 2px solid #d63031; border-radius: 16px; color: #4a2a2a; overflow-wrap: anywhere; }
+      .customer-action-card.is-visible { display: block; }
+      .customer-action-title { color: #b42318; font-size: 20px; font-weight: 700; line-height: 1.4; margin-bottom: 8px; animation: customerWarningNudge .6s ease-in-out 1; }
+      .customer-action-warning { font-size: 16px; font-weight: 700; line-height: 1.6; margin: 0 0 8px; }
+      .customer-action-instruction, .customer-action-prompt { font-size: 16px; line-height: 1.6; margin: 0 0 12px; }
+      .customer-action-cta-wrap { position: sticky; bottom: 0; z-index: 4; margin: 12px -4px 0; padding: 12px 4px calc(12px + env(safe-area-inset-bottom)); background: rgba(255, 245, 245, 0.96); }
+      .customer-action-cta { display: flex; width: 100%; min-height: 56px; box-sizing: border-box; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 14px; background: #06c755; color: #fff; font-size: 18px; font-weight: 700; line-height: 1.35; text-align: center; text-decoration: none; box-shadow: 0 5px 14px rgba(6, 199, 85, 0.3); animation: customerCtaPulse .6s ease-in-out 3; }
+      .customer-action-cta:active { transform: scale(.98); }
+      .customer-action-prompt { color: #6b4f4f; text-align: center; margin: 10px 0 0; }
+      .customer-action-card[data-state="handoff_started"] .customer-action-title { color: #8c6b2d; }
+      .customer-action-card[data-state="handoff_started"] .customer-action-cta { animation: none; }
+      .summary-details { margin-top: 8px; text-align: left; }
+      .summary-details > summary { cursor: pointer; min-height: 48px; padding: 14px 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff; color: #6b4f4f; font-size: 16px; font-weight: 700; }
+      .summary-details[open] > summary { margin-bottom: 12px; }
 
       .order-summary { background: #f8f9fa; border-radius: 10px; padding: 20px; text-align: left; display: inline-block; width: 100%; box-sizing: border-box; border: 1px solid #eee; margin-bottom: 20px; }
       .summary-title { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; font-weight: bold; color: #555; }
@@ -116,6 +133,8 @@
       .summary-prod { font-size: 13px; color: #666; padding-left: 10px; border-left: 3px solid #d4a373; margin-top: 5px; }
 
       @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+      @keyframes customerWarningNudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+      @keyframes customerCtaPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
       .loader { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; vertical-align: -3px; animation: spin .7s linear infinite; margin-right: 8px; }
       @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -139,6 +158,7 @@
       .view-out { animation: viewOut .35s ease-in both; pointer-events: none; }
       @keyframes viewIn { from { opacity: 0; transform: translateY(30px) scale(.94); } 70% { transform: translateY(-4px) scale(1.01); } to { opacity: 1; transform: none; } }
       #successView.show { animation: viewIn .55s cubic-bezier(.34,1.56,.64,1) both; }
+      #successView.show.customer-action-immediate { animation: none; opacity: 1; transform: none; }
       @keyframes iconPop { 0% { transform: scale(0) rotate(-30deg); } 55% { transform: scale(1.25) rotate(8deg); } 75% { transform: scale(.92) rotate(-3deg); } 100% { transform: scale(1) rotate(0); } }
       #successView.show .success-icon { animation: iconPop .7s cubic-bezier(.34,1.56,.64,1) .15s both; }
       .success-icon { display: inline-block; }
@@ -177,30 +197,36 @@
 
     <div class="container hide" id="successView">
       <div class="success-card">
-        <i class="bi bi-check-circle-fill success-icon"></i>
-        <div class="success-title enter" style="--i:1;">資料整理完成！</div>
-        <p class="success-desc enter" style="--i:2;">請確認以下分批寄送明細，並複製回傳給我們。</p>
+        <i id="successIcon" class="bi bi-hourglass-split success-icon"></i>
+        <div id="successTitle" class="success-title enter" style="--i:1;">資料已儲存</div>
+        <p id="successDesc" class="success-desc enter" style="--i:2;">資料已儲存，正在回傳 LINE 訊息…</p>
 
         <div style="margin-top: 15px; margin-bottom: 25px;">
           <textarea id="copyArea" readonly style="position:absolute; left:-9999px;"></textarea>
-          <div id="copyStatusMsg" class="enter" style="--i:3; font-weight:bold; font-size:16px; margin-bottom:15px; line-height:1.5;"></div>
-          <div id="manualCopyBox" style="display:none; margin-bottom:15px;">
-            <div style="color:#d63031; font-weight:bold; font-size:16px; margin-bottom:10px; line-height:1.5;">
-              請點下方按鈕複製明細內容後，再前往 LINE 回傳<br>請勿以截圖的方式傳送
+          <div id="copyStatusMsg" class="stored-status enter" style="--i:3;">資料已儲存，正在回傳 LINE 訊息…</div>
+          <div id="customerActionCard" class="customer-action-card" role="alert" aria-live="assertive" data-state="stored_sending">
+            <div class="customer-action-title">⚠️ 還差最後一步</div>
+            <p class="customer-action-warning">訊息尚未回傳給我們</p>
+            <p class="customer-action-instruction">訊息尚未回傳給店家，請務必按下方按鈕，回到 LINE 完成訊息傳送。</p>
+            <div id="manualCopyBox" style="display:none; margin-bottom:15px;">
+              <div style="color:#b42318; font-weight:bold; font-size:16px; margin-bottom:10px; line-height:1.5;">
+                請先複製分批明細，再回到 LINE 貼上
+              </div>
+              <button class="btn btn-submit" onclick="manualCopy()" type="button" style="background:#d4a373;">
+                複製明細內容
+              </button>
             </div>
-            <button class="btn btn-submit" onclick="manualCopy()" type="button" style="background:#d4a373;">
-              複製明細內容
-            </button>
+            <div class="customer-action-cta-wrap">
+              <a id="goToLineArea" href="https://lin.ee/oOteG0d" target="_blank" rel="noopener" class="customer-action-cta" onclick="startCustomerHandoff(event)">回 LINE 送出</a>
+              <p class="customer-action-prompt">進入 LINE 後，請貼上訊息並再按一次送出，我們才看得到。</p>
+            </div>
           </div>
-          <a id="goToLineArea" href="https://lin.ee/oOteG0d" target="_blank" class="enter" style="--i:4; text-decoration:none; display:block;">
-            <button class="btn btn-submit" type="button" style="background:#06c755;">
-              前往 LINE 回傳明細
-            </button>
-          </a>
         </div>
 
-        <div class="order-summary enter" style="--i:5;" id="summaryBox">
-        </div>
+        <details class="summary-details" style="--i:5;">
+          <summary>查看分批寄送摘要</summary>
+          <div class="order-summary" id="summaryBox"></div>
+        </details>
 
         <div class="enter" style="--i:6; margin-top: 20px;">
            <button class="btn btn-outline" onclick="resetForm()">
@@ -216,6 +242,15 @@
       var BLOCKED_DATES_API = "https://likeadreamcastella.zeabur.app/api/blocked-dates";
       var FORM_ID = "batch";
       var blockedDates = [];
+
+      function escapeHtml(value) {
+        return String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
 
       function loadBlockedDates() {
         fetch(BLOCKED_DATES_API)
@@ -426,8 +461,8 @@
         var opts = PRODUCT_OPTS[prodName];
 
         if (opts && opts.flavors.length > 0) {
-            flavorSel.innerHTML = opts.flavors.map(function(f) { return '<option value="' + f + '">' + f + '</option>'; }).join('');
-            packSel.innerHTML = opts.packs.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+            flavorSel.innerHTML = opts.flavors.map(function(f) { return '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + '</option>'; }).join('');
+            packSel.innerHTML = opts.packs.map(function(p) { return '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>'; }).join('');
             specRow.style.display = "flex";
         } else {
             specRow.style.display = "none";
@@ -450,8 +485,17 @@
         });
       }
 
+      function prefersReducedMotion() {
+        try {
+          return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        } catch (e) {
+          return false;
+        }
+      }
+
       // ===== 粒子爆發（改編自 21st.dev Particle Button）=====
       function burstParticles(btn) {
+        if (prefersReducedMotion()) return;
         var rect = btn.getBoundingClientRect();
         var cx = rect.left + rect.width / 2;
         var cy = rect.top + rect.height / 2;
@@ -481,7 +525,7 @@
 
       // ===== 彩帶慶祝（改編自 21st.dev magicui Confetti，奶油粉彩配色）=====
       function fireConfetti() {
-        if (typeof confetti === 'undefined') return;
+        if (prefersReducedMotion() || typeof confetti === 'undefined') return;
         var colors = ['#f8b4c4', '#d4a373', '#ffd97d', '#a8e6cf', '#fff1e6'];
         confetti({ particleCount: 70, spread: 80, origin: { y: 0.35 }, colors: colors, scalar: 0.95, shapes: ['circle'], ticks: 120 });
         setTimeout(function() {
@@ -553,7 +597,7 @@
              if(idx > 0) prodStr += "、";
              prodStr += pName + specStr + " x " + pQty + " 盒";
 
-             prodHtml += '<div class="summary-prod">• ' + pName + ' ' + specStr + ' x ' + pQty + ' 盒</div>';
+             prodHtml += '<div class="summary-prod">• ' + escapeHtml(pName) + ' ' + escapeHtml(specStr) + ' x ' + escapeHtml(pQty) + ' 盒</div>';
           });
 
           var finalNote = "【兩天前寄出禮盒】 " + note;
@@ -571,15 +615,15 @@
           summaryHtmlInner +=
             '<div class="summary-recipient">' +
               '<div class="summary-row" style="font-weight:bold; color:#000;">' +
-                 '<span>親友 #' + (i+1) + ' ' + name + '</span>' +
-                 '<span>' + date + '</span>' +
+                 '<span>親友 #' + escapeHtml(i+1) + ' ' + escapeHtml(name) + '</span>' +
+                 '<span>' + escapeHtml(date) + '</span>' +
               '</div>' +
-              '<div class="summary-row"><span>電話：' + phone + '</span></div>' +
-              '<div class="summary-row"><span>地址：' + address + '</span></div>' +
+              '<div class="summary-row"><span>電話：' + escapeHtml(phone) + '</span></div>' +
+              '<div class="summary-row"><span>地址：' + escapeHtml(address) + '</span></div>' +
               '<div style="margin-top:5px;">' +
                  prodHtml +
               '</div>' +
-              (finalNote ? '<div style="margin-top:5px; font-size:12px; color:#888;">備註：' + finalNote + '</div>' : '') +
+              (finalNote ? '<div style="margin-top:5px; font-size:12px; color:#888;">備註：' + escapeHtml(finalNote) + '</div>' : '') +
             '</div>';
         });
 
@@ -639,6 +683,14 @@
       function showSuccess(hostName, summaryHtmlInner) {
         var formView = document.getElementById("formView");
         var successView = document.getElementById("successView");
+        successView.classList.remove("customer-action-immediate");
+
+        document.getElementById("successIcon").className = "bi bi-hourglass-split success-icon";
+        document.getElementById("successTitle").innerText = "資料已儲存";
+        document.getElementById("successDesc").innerText = "資料已儲存，正在回傳 LINE 訊息…";
+        document.getElementById("copyStatusMsg").innerText = "資料已儲存，正在回傳 LINE 訊息…";
+        document.getElementById("customerActionCard").classList.remove("is-visible");
+        document.getElementById("customerActionCard").setAttribute("data-state", "stored_sending");
 
         formView.classList.add("view-out");
 
@@ -647,7 +699,7 @@
 
           var summaryHtml =
              '<div class="summary-title">📋 寄送資料匯總</div>' +
-             '<div style="text-align:center; font-weight:bold; margin-bottom:15px; color:#d4a373;">訂購媽咪：' + hostName + '</div>' +
+             '<div style="text-align:center; font-weight:bold; margin-bottom:15px; color:#d4a373;">訂購媽咪：' + escapeHtml(hostName) + '</div>' +
              summaryHtmlInner;
 
           document.getElementById("summaryBox").innerHTML = summaryHtml;
@@ -655,60 +707,10 @@
           successView.classList.remove("hide");
           successView.classList.add("show");
           window.scrollTo(0, 0);
-          setTimeout(fireConfetti, 300);
         }, 360);
       }
 
-      // ===== 伺服器回執：LIFF token 換 OA 推播（sendMessages 打不到或非 LINE 內建瀏覽器時的退路） =====
-      function tryServerRelay(texts, submissionId) {
-        var token = null;
-        try {
-          token = (typeof liff !== 'undefined' && liff.getAccessToken) ? liff.getAccessToken() : null;
-        } catch (e) {
-          token = null;
-        }
-        if (!token) return Promise.resolve({ ok: false, notify: false });
-        var RELAY_TIMEOUT_MS = 5000;
-        var controller = null;
-        try { if (typeof AbortController === 'function') controller = new AbortController(); } catch (e) {}
-        return new Promise(function(resolve) {
-          var settled = false;
-          var timerId = null;
-          function finish(result) {
-            if (settled) return;
-            settled = true;
-            if (timerId !== null) clearTimeout(timerId);
-            resolve(result);
-          }
-          timerId = setTimeout(function() {
-            if (controller) { try { controller.abort(); } catch (e) {} }
-            finish({ ok: false, notify: true });
-          }, RELAY_TIMEOUT_MS);
-          var init = {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ accessToken: token, texts: texts, submissionId: submissionId, formType: FORM_ID })
-          };
-          if (controller) init.signal = controller.signal;
-          var request;
-          try { request = fetch(FORM_RELAY_API, init); } catch (e) { finish({ ok: false, notify: true }); return; }
-          Promise.resolve(request).then(function(response) {
-            try {
-              if (response && response.ok) {
-                finish({ ok: true, notify: false });
-                return;
-              }
-              // Real Fetch responses always expose a numeric status. Unknown
-              // response shapes remain notifyable for old runtimes/mocks,
-              // while explicit client failures stay clipboard-only.
-              var status = response && response.status;
-              finish({ ok: false, notify: typeof status !== 'number' || (status >= 500 && status < 600) });
-            } catch (e) { finish({ ok: false, notify: true }); }
-          }, function() { finish({ ok: false, notify: true }); });
-        });
-      }
-
-      // ===== 自動發送到 LINE（sendMessages 優先，退伺服器回執，再退剪貼簿） =====
+      // ===== 自動發送到 LINE（僅 LINE 內建瀏覽器可自動傳送） =====
       function notifyOnly(texts, submissionId) {
         var NOTIFY_TIMEOUT_MS = 1500;
         var token = null;
@@ -749,72 +751,113 @@
       }
 
       function autoSendOrder(orderText, clipboardOk, submissionId) {
-        var copyStatusMsg = document.getElementById("copyStatusMsg");
-        var manualCopyBox = document.getElementById("manualCopyBox");
-        var goToLineArea = document.getElementById("goToLineArea");
+        var messages = [{ type: 'text', text: orderText }];
 
-        if (typeof liff === 'undefined') { showCopyResult(clipboardOk); return; }
+        function sendFailed(err) {
+          console.error('sendMessages failed:', err);
+          showCustomerActionRequired(clipboardOk);
+          try { notifyOnly(messages.map(function(m) { return m.text; }), submissionId); } catch (notifyErr) {}
+        }
 
-        function relayThenFallback() {
-          tryServerRelay([orderText], submissionId).then(function(result) {
-            if (result && result.ok) {
-              manualCopyBox.style.display = "none";
-              goToLineArea.style.display = "none";
-              copyStatusMsg.innerHTML =
-                '<span style="color:#28a745; font-size:18px;">✅ 訂單明細已傳送至官方 LINE 對話！</span>';
-            } else if (result && result.notify) {
-              notifyOnly([orderText], submissionId).then(function() {
-                showCopyResult(clipboardOk);
-              });
-            } else {
-              showCopyResult(clipboardOk);
+        function withSendTimeout(rawPromise) {
+          var SEND_TIMEOUT_MS = 5000;
+          return new Promise(function(resolve, reject) {
+            var settled = false;
+            var timerId = setTimeout(function() {
+              if (settled) return;
+              settled = true;
+              reject(new Error('sendMessages timeout'));
+            }, SEND_TIMEOUT_MS);
+            function finish(callback, value) {
+              if (settled) return;
+              settled = true;
+              clearTimeout(timerId);
+              callback(value);
             }
+            Promise.resolve(rawPromise).then(function(value) {
+              finish(resolve, value);
+            }, function(err) {
+              finish(reject, err);
+            });
           });
         }
 
-        function trySendMessages() {
-          var inClient = false;
-          try { inClient = liff.isInClient(); } catch (err) {
-            console.error('isInClient failed:', err);
-            relayThenFallback();
-            return;
-          }
-          if (!inClient) { relayThenFallback(); return; }
-          function sendFailed(err) {
-            console.error('sendMessages failed:', err);
-            relayThenFallback();
-          }
-          var sendPromise;
-          try { sendPromise = liff.sendMessages([{ type: 'text', text: orderText }]); } catch (err) {
-            sendFailed(err);
-            return;
-          }
-          Promise.resolve(sendPromise).then(function() {
-            try {
-              manualCopyBox.style.display = "none";
-              goToLineArea.style.display = "none";
-              copyStatusMsg.innerHTML =
-                '<span style="color:#28a745; font-size:18px;">✅ 明細已自動傳送至聊天室！</span><br>' +
-                '<span style="color:#888; font-size:14px;">無需手動複製，系統已為您完成</span>';
-            } catch (uiErr) {
-              console.error('sendMessages success UI failed:', uiErr);
-            }
-          }, sendFailed);
+        if (typeof liff === 'undefined') {
+          sendFailed(new Error('LIFF unavailable'));
+          return;
+        }
+        var inClient = false;
+        try { inClient = liff.isInClient() === true; } catch (err) {
+          sendFailed(err);
+          return;
+        }
+        if (!inClient) {
+          sendFailed(new Error('LIFF is not running in the LINE client'));
+          return;
         }
 
-        trySendMessages();
+        var sendPromise;
+        try {
+          var rawSendPromise = liff.sendMessages(messages);
+          sendPromise = withSendTimeout(rawSendPromise);
+        } catch (err) {
+          sendFailed(err);
+          return;
+        }
+        Promise.resolve(sendPromise).then(function() {
+          try {
+            showCustomerSentSuccess();
+          } catch (uiErr) {
+            console.error('sendMessages success UI failed:', uiErr);
+          }
+        }, sendFailed);
+      }
+
+      function showCustomerSentSuccess() {
+        var actionCard = document.getElementById("customerActionCard");
+        actionCard.classList.remove("is-visible");
+        actionCard.setAttribute("data-state", "sent");
+        document.getElementById("successView").classList.remove("customer-action-immediate");
+        document.getElementById("successIcon").className = "bi bi-check-circle-fill success-icon sent";
+        document.getElementById("successTitle").innerText = "分批明細訊息已送出！";
+        document.getElementById("successDesc").innerText = "表單資料已儲存，分批明細訊息已回傳給我們。";
+        document.getElementById("copyStatusMsg").innerHTML =
+          '<span style="color:#28a745; font-size:18px;">✅ 分批明細已自動傳送至聊天室！</span><br>' +
+          '<span style="color:#888; font-size:14px;">無需手動複製，系統已為您完成</span>';
+        document.getElementById("manualCopyBox").style.display = "none";
+        document.getElementById("goToLineArea").style.display = "none";
+        fireConfetti();
+      }
+
+      function showCustomerActionRequired(clipboardOk) {
+        var actionCard = document.getElementById("customerActionCard");
+        actionCard.classList.add("is-visible");
+        actionCard.setAttribute("data-state", "customer_action_required");
+        var successView = document.getElementById("successView");
+        successView.classList.add("customer-action-immediate");
+        document.getElementById("successIcon").className = "bi bi-exclamation-triangle-fill success-icon";
+        document.getElementById("successTitle").innerText = "資料已儲存";
+        document.getElementById("successDesc").innerText = "資料已儲存，但 LINE 訊息尚未完成回傳。";
+        document.getElementById("copyStatusMsg").innerHTML = clipboardOk
+          ? '<span style="color:#8c6b2d;">訊息尚未回傳，分批明細已準備好，請依下方步驟完成。</span>'
+          : '<span style="color:#b42318;">訊息尚未回傳，請先複製分批明細再前往 LINE。</span>';
+        document.getElementById("manualCopyBox").style.display = clipboardOk ? "none" : "block";
+      }
+
+      function startCustomerHandoff() {
+        var text = document.getElementById("copyArea").value;
+        var copied = fallbackCopy(text);
+        if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
+          try { navigator.clipboard.writeText(text).catch(function() {}); } catch (e) {}
+        }
+        var actionCard = document.getElementById("customerActionCard");
+        actionCard.setAttribute("data-state", "handoff_started");
+        document.getElementById("copyStatusMsg").innerHTML =
+          '<span style="color:#8c6b2d;">已再次準備分批明細，請回 LINE 貼上並送出。</span>';
       }
 
       function showCopyResult(clipboardOk) {
-        if (clipboardOk) {
-          document.getElementById("copyStatusMsg").innerHTML =
-            '<span style="color:#28a745;">✅ 明細內容已自動複製！</span><br>' +
-            '<span style="color:#d63031; font-size:14px;">請點擊下方按鈕，前往 LINE 貼上回傳</span>';
-        } else {
-          document.getElementById("copyStatusMsg").innerHTML =
-            '<span style="color:#e67e22;">⚠️請點下方按鈕複製明細內容</span>';
-          document.getElementById("manualCopyBox").style.display = "block";
-        }
+        showCustomerActionRequired(clipboardOk);
       }
 
       // ===== iOS LINE 瀏覽器相容的複製方法 =====
@@ -837,16 +880,59 @@
         }
       }
 
+      function showManualCopyFallback(text) {
+        var copyArea = document.getElementById("copyArea");
+        copyArea.value = text;
+        copyArea.readOnly = true;
+        copyArea.setAttribute("readonly", "");
+        copyArea.style.position = "static";
+        copyArea.style.left = "auto";
+        copyArea.style.top = "auto";
+        copyArea.style.display = "block";
+        copyArea.style.visibility = "visible";
+        copyArea.style.opacity = "1";
+        copyArea.style.width = "100%";
+        copyArea.style.minHeight = "180px";
+        copyArea.style.boxSizing = "border-box";
+        copyArea.style.padding = "12px";
+        copyArea.style.fontSize = "16px";
+        copyArea.style.lineHeight = "1.5";
+        copyArea.style.whiteSpace = "pre-wrap";
+        copyArea.style.userSelect = "text";
+        copyArea.style.webkitUserSelect = "text";
+        document.getElementById("manualCopyBox").style.display = "block";
+        document.getElementById("copyStatusMsg").innerHTML =
+          '<span style="color:#b42318;">複製功能暫時不可用，請直接長按下方內容選取並複製，再回到 LINE 貼上。</span>';
+        try {
+          copyArea.focus();
+          copyArea.select();
+        } catch (e) {}
+      }
+
       function manualCopy() {
         var text = document.getElementById("copyArea").value;
-        navigator.clipboard.writeText(text).then(function() {
+        function useFallback() {
+          var copied = false;
+          try { copied = fallbackCopy(text); } catch (e) {}
+          if (copied) onCopySuccess();
+          else showManualCopyFallback(text);
+        }
+        var clipboard = typeof navigator !== "undefined" ? navigator.clipboard : null;
+        if (!clipboard || typeof clipboard.writeText !== "function") {
+          useFallback();
+          return;
+        }
+        var writePromise;
+        try {
+          writePromise = clipboard.writeText(text);
+        } catch (e) {
+          useFallback();
+          return;
+        }
+        Promise.resolve(writePromise).then(function() {
           onCopySuccess();
-        }).catch(function() {
-          if (fallbackCopy(text)) {
-            onCopySuccess();
-          } else {
-            alert("複製失敗，請長按明細內容手動複製後，前往 LINE 貼上");
-          }
+        }, function() {
+          useFallback();
         });
       }
 
@@ -860,6 +946,7 @@
       function resetForm() {
         document.getElementById("successView").classList.add("hide");
         document.getElementById("successView").classList.remove("show");
+        document.getElementById("successView").classList.remove("customer-action-immediate");
         document.getElementById("formView").classList.remove("hide");
         document.getElementById("formView").classList.remove("view-out");
         document.getElementById("copyStatusMsg").innerHTML = "";
