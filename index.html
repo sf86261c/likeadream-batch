@@ -752,13 +752,18 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
           '<input type="text" class="r-name" aria-label="親友姓名" placeholder="例如：林小美">' +
           '<label>聯絡電話</label>' +
           '<input type="tel" class="r-phone" aria-label="聯絡電話" placeholder="09xx-xxx-xxx" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, \'\');">' +
-          '<label>配送地址</label>' +
+          '<label>配送方式</label>' +
+          '<select class="r-delivery" aria-label="配送方式" onchange="updateDeliveryMethod(this)">' +
+            '<option value="宅配寄送">宅配寄送</option>' +
+            '<option value="門市自取">自取（門市自取）</option>' +
+          '</select>' +
+          '<label class="r-address-label">配送地址</label>' +
           '<input type="text" class="r-address" aria-label="配送地址" placeholder="縣市/區域/路段...">' +
           '<div class="row">' +
             '<div class="col-6">' +
-              '<label>預計收件日</label>' +
+              '<label class="r-date-label">預計收件日</label>' +
               '<input type="date" class="r-date" aria-label="預計收件日" onchange="updateCardNotices(this)">' +
-              '<div style="font-size:12px; color:#888; margin-top:2px;">*週日無配送</div>' +
+              '<div class="r-date-help" style="font-size:12px; color:#888; margin-top:2px;">*週日無配送</div>' +
             '</div>' +
             '<div class="col-6">' +
               '<label>時段</label>' +
@@ -783,10 +788,36 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
         addProductRow(addProdBtn);
       }
 
+      var BATCH_PICKUP_ADDRESS = "【門市自取】台中市沙鹿區平等路52號";
+
+      function updateDeliveryMethod(element) {
+        var card = element.closest('.card');
+        var isPickup = element.value === '門市自取';
+        var addressInput = card.querySelector('.r-address');
+        var timeInput = card.querySelector('.r-time');
+        if (isPickup && !addressInput.readOnly) {
+          addressInput.setAttribute('data-shipping-address', addressInput.value);
+          timeInput.setAttribute('data-shipping-time', timeInput.value);
+          addressInput.value = BATCH_PICKUP_ADDRESS;
+          timeInput.value = '不指定';
+        } else if (!isPickup && addressInput.readOnly) {
+          addressInput.value = addressInput.getAttribute('data-shipping-address') || '';
+          timeInput.value = timeInput.getAttribute('data-shipping-time') || '不指定';
+        }
+        addressInput.readOnly = isPickup;
+        timeInput.disabled = isPickup;
+        card.querySelector('.r-address-label').innerText = isPickup ? '自取地點' : '配送地址';
+        addressInput.setAttribute('aria-label', isPickup ? '自取地點' : '配送地址');
+        card.querySelector('.r-date-label').innerText = isPickup ? '預計取貨日' : '預計收件日';
+        card.querySelector('.r-date').setAttribute('aria-label', isPickup ? '預計取貨日' : '預計收件日');
+        card.querySelector('.r-date-help').innerText = isPickup ? '*週日無取貨；取貨時間請與我們確認' : '*週日無配送';
+        updateCardNotices(element);
+      }
+
       function updateCardNotices(element) {
         var card = element.closest('.card');
         var dateInput = card.querySelector('.r-date');
-        var timeInput = card.querySelector('.r-time');
+        var isPickup = card.querySelector('.r-delivery').value === '門市自取';
         var noticeBox = card.querySelector('.notice-box');
 
         var messages = [];
@@ -805,7 +836,7 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
             today.setHours(0,0,0,0);
 
             if (inputDate.getDay() === 0) {
-                alert("抱歉，週日物流無配送，請選擇週一至週六的日期。");
+                alert(isPickup ? "抱歉，週日無取貨，請選擇週一至週六的日期。" : "抱歉，週日物流無配送，請選擇週一至週六的日期。");
                 dateInput.value = "";
                 updateCardNotices(element);
                 return;
@@ -813,12 +844,12 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
             else if (inputDate < today) {
                 messages.push("⚠️ 貼心提醒：<br>您選擇了【過去的日期】唷！請您重新選擇。");
             }
-            else if (inputDate.getTime() === today.getTime()) {
+            else if (!isPickup && inputDate.getTime() === today.getTime()) {
                 messages.push("⚠️ 貼心提醒：<br>最快出貨日為【明天】唷！請您重新選擇。");
             }
         }
 
-        messages.push("⚠️ 貼心提醒：<br>為確保貨運即時送達，將為您安排【兩天前寄出禮盒】。");
+        if (!isPickup) messages.push("⚠️ 貼心提醒：<br>為確保貨運即時送達，將為您安排【兩天前寄出禮盒】。");
 
         if (messages.length > 0) {
             noticeBox.innerHTML = messages.join("<br><br>");
@@ -973,9 +1004,10 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
 
           var name = card.querySelector(".r-name").value.trim();
           var phone = card.querySelector(".r-phone").value.trim();
-          var address = card.querySelector(".r-address").value.trim();
+          var isPickup = card.querySelector(".r-delivery").value === '門市自取';
+          var address = isPickup ? BATCH_PICKUP_ADDRESS : card.querySelector(".r-address").value.trim();
           var date = card.querySelector(".r-date").value;
-          var time = card.querySelector(".r-time").value;
+          var time = isPickup ? '不指定' : card.querySelector(".r-time").value;
           var note = card.querySelector(".r-note").value.trim();
 
           if(name === "" || phone === "" || address === "") {
@@ -1017,12 +1049,13 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
              prodHtml += '<div class="summary-prod">• ' + escapeHtml(pName) + ' ' + escapeHtml(specStr) + ' x ' + escapeHtml(pQty) + ' 盒</div>';
           });
 
-          var finalNote = "【兩天前寄出禮盒】 " + note;
+          var finalNote = (isPickup ? "【門市自取】 " : "【兩天前寄出禮盒】 ") + note;
 
           dataList.push({ name: name, phone: phone, address: address, date: date, time: time, products: products, note: finalNote });
 
           summaryText += "\n 親友" + (i+1) + "：" + name + "\n";
           summaryText += " 電話：" + phone + "\n";
+          summaryText += " 配送方式：" + (isPickup ? "門市自取" : "宅配寄送") + "\n";
           summaryText += " 地址：" + address + "\n";
           summaryText += " 收件：" + date + " (" + time + ")\n";
           summaryText += " 品項：" + prodStr + "\n";
@@ -1036,6 +1069,7 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
                  '<span>' + escapeHtml(date) + '</span>' +
               '</div>' +
               '<div class="summary-row"><span>電話：' + escapeHtml(phone) + '</span></div>' +
+              '<div class="summary-row"><span>配送方式：' + (isPickup ? '門市自取' : '宅配寄送') + '</span></div>' +
               '<div class="summary-row"><span>地址：' + escapeHtml(address) + '</span></div>' +
               '<div style="margin-top:5px;">' +
                  prodHtml +
@@ -1536,3 +1570,4 @@ hr { background:var(--rule) !important; margin:28px 0 !important; }
     </script>
   </body>
 </html>
+
